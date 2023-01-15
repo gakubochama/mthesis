@@ -1,20 +1,19 @@
+`include "config.vh"
 
 module m_top();
     reg r_clk=0; initial forever #50 r_clk = ~r_clk;
     reg r_rst=0;
-    reg [3:0] r_sel = 5; //control ALU
-    reg [31:0] r_rrs = 15;
-    reg [31:0] r_rrt = 13;
     wire[31:0] w_rslt;
 
+    m_main main0(r_clk,r_rst,w_rslt);
+
+//view state of shiftregs
 /*
     always@(posedge r_clk) begin
         #50 $write("%4d cycle\nshitregA:%b\nshitregB:%b\n",($time-50)/100,main0.r_shiftrega,main0.r_shiftregb);
     end
 */
     initial #8000 $write("%4d cycle\nrrs:%b\nrrt:%b\nresult:%b\n",($time-50)/100,r_rrs,r_rrt,w_rslt);
-
-    m_main main0(r_clk,r_rst,r_sel,r_rrs,r_rrt,w_rslt);
 
     initial #8000 $finish;
 endmodule
