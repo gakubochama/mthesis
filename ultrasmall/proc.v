@@ -13,8 +13,6 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
     output wire [31:0] w_d_out;
     output wire [3:0] w_d_we;
 
-    assign w_i_addr = r_pc;
-    wire [31:0] w_ir = w_i_in;
     /*********************************** Register *******************************************/
     reg [31:0] r_pc = 0; //program counter
     reg [31:0] r_npc = 0; //program counter
@@ -23,11 +21,13 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
     reg [5:0] r_cnt = 1; 
     reg [31:0] r_rrs1,r_rrs2; //value of rs1 rs2
     reg [9:0] r_alu_ctrl;
+    reg [3:0] r_shift_ctrl;
     reg [6:0] r_bru_ctrl;
     reg [31:0] r_imm;
     reg r_mem_we,r_reg_we,r_op_ld,r_op_imm;
     reg [31:0] r_shiftrega = 0;
-    reg [31:0] r_shiftregb = 4;
+    reg [31:0] r_shiftregb = 0;
+    reg r_tmp;
     reg [2:0] r_carry = 0;
     reg [31:0] r_result = 0;
     reg r_bmis = 0;
@@ -40,16 +40,18 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
     /*********************************** START_1 ********************************************/
 
     /****************************************************************************************/
+    wire [31:0] w_ir;
     wire [4:0] w_rd,w_rs1,w_rs2;
     wire w_mem_we,w_reg_we,w_op_ld,w_op_imm;
     wire [31:0] w_rrs1,w_rrs2;
     wire [9:0] w_alu_ctrl;
+    wire [3:0] w_shift_ctrl;
     wire [6:0] w_bru_ctrl;
     wire [31:0] w_imm;
 
-    decoder decoder0(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,w_alu_ctrl,w_bru_ctrl,w_imm);
+    m_decoder decoder0(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,w_alu_ctrl,w_shift_ctrl,w_bru_ctrl,w_imm);
 
-    regfile regfile0(w_clk,w_rs1,w_rs2,w_rrs1,w_rrs2,1'b0,w_rd,0);
+    m_regfile regfile0(w_clk,w_rs1,w_rs2,w_rrs1,w_rrs2,1'b0,w_rd,0);
     
     always @(posedge w_clk) begin 
         if(r_state==`START_1) begin
@@ -60,84 +62,13 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
             r_op_ld <= w_op_ld;
             r_op_imm <= w_op_imm;
             r_alu_ctrl <= w_alu_ctrl;
+            r_shift_ctrl <= w_shift_ctrl;
             r_bru_ctrl <= w_bru_ctrl;
             r_imm <= w_imm;
             r_state <= `START_2;
         end
     end
     /*********************************** START_2 ********************************************/
-    function [1:0] f_mux_34to2;
-        input [31:0] w_in;
-        input w_en;
-        input [5:0] w_sel;
-        
-        begin
-            if(w_en) begin
-                case(w_sel)
-                    1 : f_mux_34to2 = w_in[1:0];
-                    2 : f_mux_34to2 = w_in[3:2];
-                    3 : f_mux_34to2 = w_in[5:4];
-                    4 : f_mux_34to2 = w_in[7:6];
-                    5 : f_mux_34to2 = w_in[9:8];
-                    6 : f_mux_34to2 = w_in[11:10];
-                    7 : f_mux_34to2 = w_in[13:12];
-                    8 : f_mux_34to2 = w_in[15:14];
-                    9 : f_mux_34to2 = w_in[17:16];
-                    10 : f_mux_34to2 = w_in[19:18];
-                    11 : f_mux_34to2 = w_in[21:20];
-                    12 : f_mux_34to2 = w_in[23:22];
-                    13 : f_mux_34to2 = w_in[25:24];
-                    14 : f_mux_34to2 = w_in[27:26];
-                    15 : f_mux_34to2 = w_in[29:28];
-                    16 : f_mux_34to2 = w_in[31:30];
-                    default : f_mux_34to2 = 2'bxx;
-                endcase
-            end else begin
-                f_mux_34to2 = 2'b00;
-            end
-        end
-    endfunction
-
-    wire [1:0] w_rrs1toshiftreg = f_mux_34to2(r_rrs1,(r_state==START_2),r_cnt);
-    wire [1:0] w_rrs2toshiftreg = f_mux_34to2((r_op_imm) ? r_imm : r_rrs2,(r_state==START_2),r_cnt);
-
-    function [1:0] f_mux_8to2;
-        input [1:0] w_in1;
-        input [1:0] w_in2;
-        input [1:0] w_in3;
-        input [1:0] w_in4;
-        input [2:0] w_sel;
-
-        begin
-            case(w_sel)
-                1 : f_mux_8to2 = w_in1;
-                2 : f_mux_8to2 = w_in2;
-                3 : f_mux_8to2 = w_in3;
-                4 : f_mux_8to2 = w_in4;
-                default : f_mux_8to2 = 2'bxx;
-            endcase
-        end
-    endfunction
-
-    function [1:0] f_mux_6to2;
-        input [1:0] w_in1;
-        input [1:0] w_in2;
-        input [1:0] w_in3;
-        input [1:0] w_sel;
-
-        begin
-            case(w_sel)
-                1 : f_mux_8to2 = w_in1;
-                2 : f_mux_8to2 = w_in2;
-                3 : f_mux_8to2 = w_in3;
-                default : f_mux_8to2 = 2'bxx;
-            endcase
-        end
-    endfunction
-
-    wire [1:0] w_in_shiftrega = f_mux_8to2(w_rrs1toshiftreg,w_alu_result,w_shiftrega_2,w_tmp_result,w_sel1);
-    wire [1:0] w_in_shiftregb = f_mux_6to2(w_rrs2toshiftreg,w_imm_2,w_shiftregb_2,w_sel2);
-
     always@(posedge w_clk) begin
         if(r_state==`START_2) begin
             if(r_cnt[4]==0) begin
@@ -161,11 +92,11 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
     /*********************************** START_3 ********************************************/
     always@(posedge w_clk) begin
         if(r_state==`START_3) begin
-            if(r_alu_ctrl!=0 | r_alu_ctrl!=6 | r_alu_ctrl!=7) begin 
+            if(r_alu_ctrl!=0) begin 
                 r_state <= (r_op_imm) ? `ALUI_1 : `ALU_1;
-            end
-            else if(r_alu_ctrl==6) r_state <= `SHIFTL_1;
-            else if(r_alu_ctrl==7) r_state <= `SHIFTR_1;
+            end 
+            else if(r_shift_ctrl==1) r_state <= `SHIFTL_1;
+            else if(r_shift_ctrl==2) r_state <= `SHIFTR_1;
             else if(r_bru_ctrl!=0) r_state <= `BRANCH_1;
         end
     end
@@ -174,56 +105,62 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
  
     /*********************************** ALU_1 **********************************************/
     wire [1:0] w_alu_result;
-    wire w_carry;
-    assign {w_carry,w_alu_result} = r_shiftrega[1:0] + r_shiftregb[1:0] + r_carry
+    wire [2:0] w_carry;
+    wire [1:0] w_in_shiftrega,w_in_shiftregb;
+
+    m_ALU ALU0(r_shiftrega[1:0],r_shiftregb[1:0],r_carry,r_alu_ctrl,w_alu_result,w_carry);
 
     always @(posedge w_clk) begin
         if(r_state==`ALU_1) begin
             if(r_cnt[4]==0) begin 
                 case(r_alu_ctrl)
                     1 : begin //add
-                            {r_carry,r_shiftrega} <= {w_carry,w_in_shiftrega,r_shiftrega[31:2]};
+                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
+                            r_carry <= w_carry;
                         end
                     2 : begin //sub
-                            {r_carry,r_shiftrega} <= {r_shiftrega[1:0] - r_shiftregb[1:0] - r_carry,r_shiftrega[31:2]};
+                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
+                            r_carry <= w_carry;
                         end
                     3 : begin //xor
-                            r_shiftrega <= {r_shiftrega[1:0] ^ r_shiftregb[1:0],r_shiftrega[31:2]};
+                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
                         end
                     4 : begin //or
-                            r_shiftrega <= {r_shiftrega[1:0] | r_shiftregb[1:0],r_shiftrega[31:2]};
+                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
                         end
                     5 : begin //and
-                            r_shiftrega <= {r_shiftrega[1:0] & r_shiftregb[1:0],r_shiftrega[31:2]};
+                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
                         end
                     default : begin 
                             r_shiftrega <= {2'b00,r_shiftrega[31:2]};
                         end
                 endcase
-                r_shiftregb <= {2'b00,r_shiftregb[31:2]};
+                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
                 r_cnt <= r_cnt + 1;
             end else begin
                 case(r_alu_ctrl)
                     1 : begin //add
-                            {r_carry,r_shiftrega} <= {r_shiftrega[1:0] + r_shiftregb[1:0] + r_carry,r_shiftrega[31:2]};
+                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
+                            r_carry <= w_carry;
                         end
                     2 : begin //sub
-                            {r_carry,r_shiftrega} <= {r_shiftrega[1:0] - r_shiftregb[1:0] - r_carry,r_shiftrega[31:2]};
+                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
+                            r_carry <= w_carry;
                         end
                     3 : begin //xor
-                            r_shiftrega <= {r_shiftrega[1:0] ^ r_shiftregb[1:0],r_shiftrega[31:2]};
+                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
                         end
                     4 : begin //or
-                            r_shiftrega <= {r_shiftrega[1:0] | r_shiftregb[1:0],r_shiftrega[31:2]};
+                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
                         end
                     5 : begin //and
-                            r_shiftrega <= {r_shiftrega[1:0] & r_shiftregb[1:0],r_shiftrega[31:2]};
+                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
                         end
                     default : begin 
                             r_shiftrega <= {2'b00,r_shiftrega[31:2]};
                         end
                 endcase
-                r_shiftregb <= {2'b00,r_shiftregb[31:2]};
+                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
                 r_state <= `WRITEBACK_1;
                 r_cnt <= 1;
             end
@@ -283,6 +220,784 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
             end
         end
     end
+
+    /*********************************** SHIFTR_1 *******************************************/
+    always @(posedge w_clk) begin
+        if(r_state==`SHIFTR_1) begin
+            case(r_shiftregb)
+                1 : begin 
+                        r_cnt <= 0;
+                        r_state <= `SHIFTR_2;
+                    end
+                2 : begin              
+                        r_tmp <= r_shiftrega[1];
+                        r_shiftrega <= {2'b00,r_shiftrega[31:2]};                
+                        r_state <= `WRITEBACK_1;                   
+                    end
+                3 : begin
+                        r_tmp <= r_shiftrega[1];
+                        r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                        r_cnt <= 0;
+                        r_state <= `SHIFTR_2;
+                    end
+                4 : begin
+                        if(r_cnt!=2) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                5 : begin
+                        if(r_cnt!=2) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                6 : begin
+                        if(r_cnt!=3) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                7 : begin
+                        if(r_cnt!=3) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                8 : begin
+                        if(r_cnt!=4) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                9 : begin
+                        if(r_cnt!=4) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                10 : begin
+                        if(r_cnt!=5) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                11 : begin
+                        if(r_cnt!=5) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                12 : begin
+                        if(r_cnt!=6) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                13 : begin
+                        if(r_cnt!=6) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                14 : begin
+                        if(r_cnt!=7) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                15 : begin
+                        if(r_cnt!=7) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                16 : begin
+                        if(r_cnt!=8) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                17 : begin
+                        if(r_cnt!=8) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                18 : begin
+                        if(r_cnt!=9) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                19 : begin
+                        if(r_cnt!=9) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                20 : begin
+                        if(r_cnt!=10) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                21 : begin
+                        if(r_cnt!=10) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                22 : begin
+                        if(r_cnt!=11) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                23 : begin
+                        if(r_cnt!=11) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                24 : begin
+                        if(r_cnt!=12) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                25 : begin
+                        if(r_cnt!=12) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                26 : begin
+                        if(r_cnt!=13) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                27 : begin
+                        if(r_cnt!=13) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                28 : begin
+                        if(r_cnt!=14) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                29 : begin
+                        if(r_cnt!=14) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                30 : begin
+                        if(r_cnt!=15) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                31 : begin
+                        if(r_cnt!=15) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTR_2;
+                        end
+                    end
+                32 : begin
+                        if(r_cnt==15) begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[1];
+                            r_shiftrega <= {2'b00,r_shiftrega[31:2]};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                default : r_state <= `WRITEBACK_1;
+            endcase
+        end
+    end
+
+    /*********************************** SHIFTR_2 *******************************************/
+    always @(posedge w_clk) begin
+        if(r_state==`SHIFTR_2) begin
+            if(r_cnt[4]==0) begin
+                r_tmp <= r_shiftrega[1];
+                r_shiftrega <= {r_shiftrega[0],r_tmp,r_shiftrega[31:2]};  
+                r_cnt <= r_cnt + 1;
+            end else begin
+                r_tmp <= r_shiftrega[1];
+                r_shiftrega <= {1'b0,r_tmp,r_shiftrega[31:2]};  
+                r_cnt <= 1;
+                r_state <= `WRITEBACK_1;
+            end
+        end
+    end
+
+    /*********************************** SHIFTL_1 *******************************************/
+
+    always @(posedge w_clk) begin
+        if(r_state==`SHIFTL_1) begin
+            case(r_shiftregb)
+                1 : begin
+                        r_cnt <= 0;
+                        r_state <= `SHIFTL_2;
+                    end
+                2 : begin
+                        r_tmp <= r_shiftrega[30];
+                        r_shiftrega <= {r_shiftrega[29:0],2'b00};
+                        r_state <= `WRITEBACK_1;
+                    end
+                3 : begin
+                        r_tmp <= r_shiftrega[30];
+                        r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                        r_cnt <= 0;
+                        r_state <= `SHIFTL_2;
+                    end
+                4 : begin
+                        if(r_cnt!=2) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                5 : begin
+                        if(r_cnt!=2) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                6 : begin
+                        if(r_cnt!=3) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                7 : begin
+                        if(r_cnt!=3) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                8 : begin
+                        if(r_cnt!=4) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                9 : begin
+                        if(r_cnt!=4) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                10 : begin
+                        if(r_cnt!=5) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                11 : begin
+                        if(r_cnt!=5) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                12 : begin
+                        if(r_cnt!=6) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                13 : begin
+                        if(r_cnt!=6) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                14 : begin
+                        if(r_cnt!=7) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                15 : begin
+                        if(r_cnt!=7) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                16 : begin
+                        if(r_cnt!=8) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                17 : begin
+                        if(r_cnt!=8) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                18 : begin
+                        if(r_cnt!=9) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                19 : begin
+                        if(r_cnt!=9) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                20 : begin
+                        if(r_cnt!=10) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                21 : begin
+                        if(r_cnt!=10) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                22 : begin
+                        if(r_cnt!=11) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                23 : begin
+                        if(r_cnt!=11) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                24 : begin
+                        if(r_cnt!=12) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                25 : begin
+                        if(r_cnt!=12) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                26 : begin
+                        if(r_cnt!=13) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                27 : begin
+                        if(r_cnt!=13) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                28 : begin
+                        if(r_cnt!=14) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                29 : begin
+                        if(r_cnt!=14) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                30 : begin
+                        if(r_cnt!=15) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                31 : begin
+                        if(r_cnt!=15) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 0;
+                            r_state <= `SHIFTL_2;
+                        end
+                    end
+                32 : begin
+                        if(r_cnt==15) begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= r_cnt + 1;
+                        end else begin
+                            r_tmp <= r_shiftrega[30];
+                            r_shiftrega <= {r_shiftrega[29:0],2'b00};  
+                            r_cnt <= 1;
+                            r_state <= `WRITEBACK_1;
+                        end
+                    end
+                default : r_state <= `WRITEBACK_1;
+            endcase
+        end
+    end
+
+    /*********************************** SHIFTL_2 *******************************************/
+    always @(posedge w_clk) begin
+        if(r_state==`SHIFTL_2) begin
+            if(r_cnt[4]==0) begin
+                r_tmp <= r_shiftrega[30];
+                r_shiftrega <= {r_shiftrega[29:0],r_tmp,r_shiftrega[31]};  
+                r_cnt <= r_cnt + 1;
+            end else begin
+                r_tmp <= r_shiftrega[30];
+                r_shiftrega <= {r_shiftrega[29:0],r_tmp,1'b0};  
+                r_cnt <= 1;
+                r_state <= `WRITEBACK_1;
+            end
+        end
+    end
+
     /*********************************** BRANCH_1 *******************************************/
 
     /*********************************** WRITEBACK_1 ****************************************/
@@ -290,6 +1005,7 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
         if(r_state==`WRITEBACK_1) begin
             r_result <= r_shiftrega;
             r_shiftrega <= 0;
+            r_shiftregb <= 0;
             r_state <= `START_1;
         end
     end
@@ -307,16 +1023,146 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
         else r_rout <= r_rout;
     end
 
+    /*********************************** WIREASSIGN *****************************************/
+    assign w_i_addr = r_pc;
+
+    assign w_ir = w_i_in;
+
+    wire [1:0] w_rrs1toshiftreg = f_mux_to_w_rrstoshiftreg(r_rrs1,(r_state==`START_2),r_cnt);
+    wire [1:0] w_rrs2toshiftreg = f_mux_to_w_rrstoshiftreg((r_op_imm) ? r_imm : r_rrs2,(r_state==`START_2),r_cnt);
+    wire [1:0] w_imm_2 = f_mux_w_imm_2(r_imm,r_cnt);
+
+    wire [1:0] w_shiftrega_2 = r_shiftrega[1:0];
+    wire [1:0] w_shiftregb_2 = r_shiftregb[1:0];
+
+    wire [1:0] w_tmp_result = f_mux_to_w_tmp_result(r_shiftrega[0],r_shiftrega[31],r_tmp,r_state,r_cnt[4]);
+
+    assign w_in_shiftrega = f_mux_to_w_in_shiftrega(w_rrs1toshiftreg,w_alu_result,w_tmp_result,r_state);
+    assign w_in_shiftregb = f_mux_to_w_in_shiftregb(w_rrs2toshiftreg,w_imm_2,r_state,r_op_imm);
+
+
+
+    /*********************************** FUNCTIONS ******************************************/
+    function [1:0] f_mux_w_imm_2;
+        input [31:0] w_imm;
+        input [5:0] w_sel;
+
+        begin
+            case(w_sel)
+                1 : f_mux_w_imm_2 = w_imm[1:0];
+                2 : f_mux_w_imm_2 = w_imm[3:2];
+                3 : f_mux_w_imm_2 = w_imm[5:4];
+                4 : f_mux_w_imm_2 = w_imm[7:6];
+                5 : f_mux_w_imm_2 = w_imm[9:8];
+                6 : f_mux_w_imm_2 = w_imm[11:10];
+                7 : f_mux_w_imm_2 = w_imm[13:12];
+                8 : f_mux_w_imm_2 = w_imm[15:14];
+                9 : f_mux_w_imm_2 = w_imm[17:16];
+                10 : f_mux_w_imm_2 = w_imm[19:18];
+                11 : f_mux_w_imm_2 = w_imm[21:20];
+                12 : f_mux_w_imm_2 = w_imm[23:22];
+                13 : f_mux_w_imm_2 = w_imm[25:24];
+                14 : f_mux_w_imm_2 = w_imm[27:26];
+                15 : f_mux_w_imm_2 = w_imm[29:28];
+                16 : f_mux_w_imm_2 = w_imm[31:30];
+                default : f_mux_w_imm_2 = 2'bxx;
+            endcase
+        end
+    endfunction
+
+    function [1:0] f_mux_to_w_rrstoshiftreg;
+        input [31:0] w_in;
+        input w_en;
+        input [5:0] w_sel;
+        
+        begin
+            if(w_en) begin
+                case(w_sel)
+                    1 : f_mux_to_w_rrstoshiftreg = w_in[1:0];
+                    2 : f_mux_to_w_rrstoshiftreg = w_in[3:2];
+                    3 : f_mux_to_w_rrstoshiftreg = w_in[5:4];
+                    4 : f_mux_to_w_rrstoshiftreg = w_in[7:6];
+                    5 : f_mux_to_w_rrstoshiftreg = w_in[9:8];
+                    6 : f_mux_to_w_rrstoshiftreg = w_in[11:10];
+                    7 : f_mux_to_w_rrstoshiftreg = w_in[13:12];
+                    8 : f_mux_to_w_rrstoshiftreg = w_in[15:14];
+                    9 : f_mux_to_w_rrstoshiftreg = w_in[17:16];
+                    10 : f_mux_to_w_rrstoshiftreg = w_in[19:18];
+                    11 : f_mux_to_w_rrstoshiftreg = w_in[21:20];
+                    12 : f_mux_to_w_rrstoshiftreg = w_in[23:22];
+                    13 : f_mux_to_w_rrstoshiftreg = w_in[25:24];
+                    14 : f_mux_to_w_rrstoshiftreg = w_in[27:26];
+                    15 : f_mux_to_w_rrstoshiftreg = w_in[29:28];
+                    16 : f_mux_to_w_rrstoshiftreg = w_in[31:30];
+                    default : f_mux_to_w_rrstoshiftreg = 2'bxx;
+                endcase
+            end else begin
+                f_mux_to_w_rrstoshiftreg = 2'b00;
+            end
+        end
+    endfunction
+
+    function [1:0] f_mux_to_w_in_shiftrega;
+        input [1:0] w_rrs1toshiftreg;
+        //input [1:0] w_shiftrega_2;
+        input [1:0] w_alu_result;
+        input [1:0] w_tmp_result;
+        input [4:0] w_state;
+
+        begin
+            case(w_state)
+                `START_2 : f_mux_to_w_in_shiftrega = w_rrs1toshiftreg;
+                `ALU_1 : f_mux_to_w_in_shiftrega = w_alu_result;
+                `ALUI_1 : f_mux_to_w_in_shiftrega = w_alu_result;
+                `SHIFTR_2 : f_mux_to_w_in_shiftrega = w_tmp_result;
+                `SHIFTL_2 : f_mux_to_w_in_shiftrega = w_tmp_result;
+                default : f_mux_to_w_in_shiftrega = 2'b00;
+            endcase
+        end
+    endfunction
+
+    function [1:0] f_mux_to_w_in_shiftregb;
+        input [1:0] w_rrs2toshiftreg;
+        input [1:0] w_imm_2;
+        //input [1:0] w_shiftregb_2;
+        input [4:0] w_state;
+        input w_op_imm;
+
+        begin
+            case(w_state)
+                `START_2 : f_mux_to_w_in_shiftregb = (w_op_imm) ? w_imm_2 : w_rrs2toshiftreg;
+                default : f_mux_to_w_in_shiftregb = 2'b00;
+            endcase
+        end
+    endfunction
+
+    function [1:0] f_mux_to_w_tmp_result;
+        input w_shiftreg_0;
+        input w_shiftreg_31;
+        input w_tmp;
+        input [4:0] w_state;
+        input w_cnt_4;
+        
+        begin  
+            case(w_state)
+                `SHIFTR_2 : f_mux_to_w_tmp_result = (w_cnt_4==1) ? {1'b0,w_tmp} : {w_shiftreg_0,w_tmp};
+                `SHIFTL_2 : f_mux_to_w_tmp_result = (w_cnt_4==1) ? {w_tmp,1'b0} : {w_tmp,w_shiftreg_31};
+                default : f_mux_to_w_tmp_result = 2'b00;
+            endcase
+        end
+    endfunction
+
 endmodule
 
 
 /********************************************************************************************/
-module decoder(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,r_alu_ctrl,r_bru_ctrl,w_imm);
+module m_decoder(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,r_alu_ctrl,r_shift_ctrl,r_bru_ctrl,w_imm);
     input wire [31:0] w_ir;
     output wire [4:0] w_rd,w_rs1,w_rs2;
     output wire [31:0] w_imm;
     output wire w_mem_we,w_reg_we,w_op_ld,w_op_imm;
     output reg [9:0] r_alu_ctrl;
+    output reg [3:0] r_shift_ctrl;
     output reg [6:0] r_bru_ctrl;
 
     //select format
@@ -346,12 +1192,21 @@ module decoder(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,r_alu_ct
     assign w_rs2    = (!w_op_imm) ? w_ir[24:20] : 5'd0;
     assign w_imm = w_imm_U ^ w_imm_I ^ w_imm_S ^ w_imm_B ^ w_imm_J;
 
+    reg [3:0] r_shift_ctrl0;
     reg [3:0] r_alu_ctrl0;
     always @(*) begin
         case(w_op)
-            5'b01100 : r_alu_ctrl0 = {w_funct7[5], w_funct3}; 
+            5'b01100 : r_shift_ctrl0 = {w_funct7[5], w_funct3}; 
             5'b00100 : r_alu_ctrl0 = (w_funct3==3'h5) ? {w_funct7[5], w_funct3} : {1'b0, w_funct3};
             default  : r_alu_ctrl0 = 4'b1111;
+        endcase
+    end
+
+    always @(*) begin
+        case(r_shift_ctrl0)
+            `SHIFT_CTRL_SLL___ : r_shift_ctrl = 1;
+            `SHIFT_CTRL_SRL___ : r_shift_ctrl = 2;
+            default : r_shift_ctrl = 0;
         endcase
     end
 
@@ -362,8 +1217,6 @@ module decoder(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,r_alu_ct
             `ALU_CTRL_XOR___ : r_alu_ctrl = 3;
             `ALU_CTRL_OR____ : r_alu_ctrl = 4;
             `ALU_CTRL_AND___ : r_alu_ctrl = 5;
-            `ALU_CTRL_SLL___ : r_alu_ctrl = 6;
-            `ALU_CTRL_SRL___ : r_alu_ctrl = 7;
             default          : r_alu_ctrl = 0;
         endcase
     end
@@ -384,7 +1237,7 @@ module decoder(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,r_alu_ct
 endmodule
 
 /********************************************************************************************/  
-module regfile(w_clk, w_rs1, w_rs2, w_rdata1, w_rdata2, w_we, w_rd, w_wdata);
+module m_regfile(w_clk, w_rs1, w_rs2, w_rdata1, w_rdata2, w_we, w_rd, w_wdata);
     input  wire        w_clk;
     input  wire [ 4:0] w_rs1, w_rs2;
     output wire [31:0] w_rdata1, w_rdata2;
@@ -396,4 +1249,31 @@ module regfile(w_clk, w_rs1, w_rs2, w_rdata1, w_rdata2, w_we, w_rd, w_wdata);
     assign w_rdata1 = (w_rs1 == 0) ? 0 : (w_rs1==w_rd) ? w_wdata : mem[w_rs1];
     assign w_rdata2 = (w_rs2 == 0) ? 0 : (w_rs2==w_rd) ? w_wdata : mem[w_rs2];
     always @(posedge w_clk) if(w_we && (w_rd!=0)) mem[w_rd] <= w_wdata;
+endmodule
+
+/********************************************************************************************/  
+
+module m_ALU(w_alu_in1,w_alu_in2,w_carry_in,w_alu_ctrl,w_alu_result,w_carry_out);
+    input wire [1:0] w_alu_in1,w_alu_in2;
+    input wire [2:0] w_carry_in;
+    input wire [9:0] w_alu_ctrl;
+    output wire [1:0] w_alu_result;
+    output wire [2:0] w_carry_out;
+
+    reg [1:0] r_alu_result;
+    reg [2:0] r_carry_out;
+
+    always @(*) begin
+        case(w_alu_ctrl)
+            1 : {r_carry_out,r_alu_result} = w_alu_in1 + w_alu_in2 + w_carry_in;
+            2 : {r_carry_out,r_alu_result} = w_alu_in1 - w_alu_in2 - w_carry_in;
+            3 : r_alu_result = w_alu_in1 ^ w_alu_in2;
+            4 : r_alu_result = w_alu_in1 | w_alu_in2;
+            5 : r_alu_result = w_alu_in1 & w_alu_in2;
+            default : r_alu_result = 0;
+        endcase
+    end
+
+    assign w_alu_result = r_alu_result;
+    assign w_carry_out = r_carry_out;
 endmodule

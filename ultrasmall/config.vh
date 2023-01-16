@@ -29,11 +29,11 @@
 //select instruction
 `define OPCODE_HALT____ 7'h7F
 `define ALU_CTRL_ADD___ 4'h0
-`define ALU_CTRL_SLL___ 4'h1
 `define ALU_CTRL_XOR___ 4'h4
-`define ALU_CTRL_SRL___ 4'h5
 `define ALU_CTRL_OR____ 4'h6
 `define ALU_CTRL_AND___ 4'h7
 `define ALU_CTRL_SUB___ 4'h8
 
+`define SHIFT_CTRL_SLL___ 4'h1
+`define SHIFT_CTRL_SRL___ 4'h5
 

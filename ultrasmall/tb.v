@@ -30,8 +30,9 @@ module m_testbench();
         //imem.mem[3] = {7'b0000000,5'd2,5'd1,3'b110,5'd3,5'b01100,2'b11}; // or $3, $1, $2
         //imem.mem[4] = {7'b0000000,5'd2,5'd1,3'b111,5'd3,5'b01100,2'b11}; // and $3, $1, $2
         //imem.mem[5] = {7'b1111111,5'd5,5'd4,3'b000,4'b1100,1'b1,5'b11000,2'b11}; // beq $4, $5, -20
-        imem.mem[0] = {12'd13,5'd1,3'b000,5'd3,5'b00100,2'b11}; // addi $3, $1,15
-
+        //imem.mem[0] = {12'd15,5'd1,3'b000,5'd3,5'b00100,2'b11}; // addi $3, $1, 15
+        //imem.mem[0] = {7'b0000000,5'd7,5'd6,3'b101,5'd3,5'b01100,2'b11}; // srl $3, $6 ,$7
+        //imem.mem[0] = {7'b0000000,5'd7,5'd6,3'b001,5'd3,5'b01100,2'b11}; // sll $3, $6 ,$7
     //initialize dmem
         //dmem.mem[0] = {};
 
@@ -40,6 +41,8 @@ module m_testbench();
         p.regfile0.mem[2] = {32'd15}; //1111
         p.regfile0.mem[4] = {32'd0}; 
         p.regfile0.mem[5] = {32'd0}; 
+        p.regfile0.mem[6] = {32'b1111101}; //4bit
+        p.regfile0.mem[7] = {32'd5}; 
     end
 
 /*  
@@ -99,8 +102,8 @@ module m_testbench();
 
     always@(posedge r_clk) begin
         //$write("%4d cycle r_state:%b\n",($time-50)/100,p.r_state);
-        $write("%4d r_state:%b\n",$time,p.r_state);
-        $write("shitregA:%b\nshitregB:%b\n",p.r_shiftrega,p.r_shiftregb);
+        #1 $write("%4d r_state:%b r_cnt:%b r_tmp:%b\n",$time,p.r_state,p.r_cnt,p.r_tmp);
+        #1 $write("shitregA:%b\nshitregB:%b\n",p.r_shiftrega,p.r_shiftregb);
         //$write("r_cnt:%b\n",p.r_cnt);
     end
 
@@ -110,7 +113,7 @@ module m_testbench();
     //initial #3051 $write("r_state:%b\n",p.r_state);
     //initial #6751 $write("w_ir:%b\n",p.w_ir);
     //initial #6551 $write("r_pc:%b\n",p.r_pc);
-    initial #7000 $finish;
+    initial #7500 $finish;
 
     UltraSmall p(r_clk, !r_core_rst, w_rout, w_halt, w_i_addr, w_d_addr, w_i_data, w_d_data, w_wd_data, w_d_we);
 
