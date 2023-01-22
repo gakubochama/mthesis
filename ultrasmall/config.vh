@@ -28,6 +28,7 @@
 
 //select instruction
 `define OPCODE_HALT____ 7'h7F
+
 `define ALU_CTRL_ADD___ 4'h0
 `define ALU_CTRL_XOR___ 4'h4
 `define ALU_CTRL_OR____ 4'h6

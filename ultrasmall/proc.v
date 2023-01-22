@@ -4,33 +4,30 @@
 `default_nettype none
 /********************************************************************************************/
 
-module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_d_in, w_d_out, w_d_we);
+module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_d_in, w_d_out, w_i_en, w_d_we);
     input wire w_clk,w_rst_x;
     output reg [31:0] r_rout;
     output reg r_halt;
     output wire [31:0] w_i_addr,w_d_addr;
     input wire [31:0] w_i_in,w_d_in;
     output wire [31:0] w_d_out;
+    output wire w_i_en;
     output wire [3:0] w_d_we;
 
     /*********************************** Register *******************************************/
     reg [31:0] r_pc = 0; //program counter
-    reg [31:0] r_npc = 0; //program counter
-    reg r_pc_we = 0;
+    reg [31:0] r_npc = 32'd4; //program counter
     reg [4:0] r_state = 0;
     reg [5:0] r_cnt = 1; 
-    reg [31:0] r_rrs1,r_rrs2; //value of rs1 rs2
-    reg [9:0] r_alu_ctrl;
-    reg [3:0] r_shift_ctrl;
-    reg [6:0] r_bru_ctrl;
-    reg [31:0] r_imm;
-    reg r_mem_we,r_reg_we,r_op_ld,r_op_imm;
     reg [31:0] r_shiftrega = 0;
-    reg [31:0] r_shiftregb = 0;
+    reg [31:0] r_shiftregb = 32'd4;
     reg r_tmp;
-    reg [2:0] r_carry = 0;
+    reg r_carry = 0;
     reg [31:0] r_result = 0;
     reg r_bmis = 0;
+    reg r_i_en = 0;
+    reg r_stall = 0;
+    reg r_npcadd_en = 0;
 
 
     /****************************************************************************************/
@@ -38,6 +35,9 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
     always @(posedge w_clk) r_rst <= !w_rst_x | r_halt;
 
     /*********************************** START_1 ********************************************/
+    always @(posedge w_clk) begin
+        if(r_state==`START_1) r_i_en <= 0;
+    end
 
     /****************************************************************************************/
     wire [31:0] w_ir;
@@ -51,37 +51,35 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
 
     m_decoder decoder0(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,w_alu_ctrl,w_shift_ctrl,w_bru_ctrl,w_imm);
 
-    m_regfile regfile0(w_clk,w_rs1,w_rs2,w_rrs1,w_rrs2,1'b0,w_rd,0);
+    m_regfile regfile0(w_clk,w_rs1,w_rs2,w_rrs1,w_rrs2,w_reg_we,w_rd,w_result);
     
     always @(posedge w_clk) begin 
         if(r_state==`START_1) begin
-            r_rrs1 <= w_rrs1;
-            r_rrs2 <= w_rrs2;
-            r_mem_we <= w_mem_we;
-            r_reg_we <= w_reg_we;
-            r_op_ld <= w_op_ld;
-            r_op_imm <= w_op_imm;
-            r_alu_ctrl <= w_alu_ctrl;
-            r_shift_ctrl <= w_shift_ctrl;
-            r_bru_ctrl <= w_bru_ctrl;
-            r_imm <= w_imm;
+            r_carry <= 0;
+            r_npcadd_en <= 1;
             r_state <= `START_2;
         end
     end
     /*********************************** START_2 ********************************************/
+    wire w_carry;
+
     always@(posedge w_clk) begin
         if(r_state==`START_2) begin
             if(r_cnt[4]==0) begin
-                {r_carry,r_npc} <= {r_pc[1:0] + r_shiftregb[1:0] + r_carry,r_pc[31:2]};
+                r_pc <= {r_npc[1:0],r_pc[31:2]};
+                r_npc <= {w_to_r_npc,r_npc[31:2]};
+                r_carry <= w_carry;
                 r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
                 r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
                 r_cnt <= r_cnt + 1;
             end else begin
-                {r_carry,r_npc} <= {r_npc[1:0] + r_shiftregb[1:0] + r_carry,r_npc[31:2]};
+                r_pc <= {r_npc[1:0],r_pc[31:2]};
+                r_npc <= {w_to_r_npc,r_npc[31:2]};
+                r_carry <= w_carry;
                 r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
                 r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
                 r_cnt <= 1;
-                r_carry <= 0;
+                r_npcadd_en <= 0;
                 r_state <= `START_3;
             end
         end
@@ -92,12 +90,13 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
     /*********************************** START_3 ********************************************/
     always@(posedge w_clk) begin
         if(r_state==`START_3) begin
-            if(r_alu_ctrl!=0) begin 
-                r_state <= (r_op_imm) ? `ALUI_1 : `ALU_1;
+            if(w_alu_ctrl!=0) begin 
+                r_state <= (w_op_imm) ? `ALUI_1 : `ALU_1;
             end 
-            else if(r_shift_ctrl==1) r_state <= `SHIFTL_1;
-            else if(r_shift_ctrl==2) r_state <= `SHIFTR_1;
-            else if(r_bru_ctrl!=0) r_state <= `BRANCH_1;
+            else if(w_shift_ctrl==1) r_state <= `SHIFTL_1;
+            else if(w_shift_ctrl==2) r_state <= `SHIFTR_1;
+            else if(w_bru_ctrl!=0) r_state <= `BRANCH_1;
+            r_carry <= 0;
         end
     end
 
@@ -105,15 +104,15 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
  
     /*********************************** ALU_1 **********************************************/
     wire [1:0] w_alu_result;
-    wire [2:0] w_carry;
     wire [1:0] w_in_shiftrega,w_in_shiftregb;
+    wire w_npcadd_en;
 
-    m_ALU ALU0(r_shiftrega[1:0],r_shiftregb[1:0],r_carry,r_alu_ctrl,w_alu_result,w_carry);
+    m_ALU ALU0(w_alu_in1,w_alu_in2,r_carry,w_alu_ctrl,w_npcadd_en,w_alu_result,w_carry);
 
     always @(posedge w_clk) begin
         if(r_state==`ALU_1) begin
             if(r_cnt[4]==0) begin 
-                case(r_alu_ctrl)
+                case(w_alu_ctrl)
                     1 : begin //add
                             r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
                             r_carry <= w_carry;
@@ -138,7 +137,7 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
                 r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
                 r_cnt <= r_cnt + 1;
             end else begin
-                case(r_alu_ctrl)
+                case(w_alu_ctrl)
                     1 : begin //add
                             r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
                             r_carry <= w_carry;
@@ -171,7 +170,7 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
     always @(posedge w_clk) begin
         if(r_state==`ALUI_1) begin
             if(r_cnt[4]==0) begin 
-                case(r_alu_ctrl)
+                case(w_alu_ctrl)
                     1 : begin //add
                             {r_carry,r_shiftrega} <= {r_shiftrega[1:0] + r_shiftregb[1:0] + r_carry,r_shiftrega[31:2]};
                         end
@@ -194,7 +193,7 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
                 r_shiftregb <= {2'b00,r_shiftregb[31:2]};
                 r_cnt <= r_cnt + 1;
             end else begin
-                case(r_alu_ctrl)
+                case(w_alu_ctrl)
                     1 : begin //add
                             {r_carry,r_shiftrega} <= {r_shiftrega[1:0] + r_shiftregb[1:0] + r_carry,r_shiftrega[31:2]};
                         end
@@ -1003,9 +1002,9 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
     /*********************************** WRITEBACK_1 ****************************************/
     always @(posedge w_clk) begin
         if(r_state==`WRITEBACK_1) begin
-            r_result <= r_shiftrega;
             r_shiftrega <= 0;
-            r_shiftregb <= 0;
+            r_shiftregb <= 32'd4;
+            r_i_en <= 1;
             r_state <= `START_1;
         end
     end
@@ -1020,17 +1019,21 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
     
     always @(posedge w_clk) begin
         if(r_rst) r_rout <= 0;
-        else r_rout <= r_rout;
+        else if(r_state==`WRITEBACK_1) r_rout <= w_result;
     end
 
     /*********************************** WIREASSIGN *****************************************/
     assign w_i_addr = r_pc;
-
+    wire [1:0] w_npc_2 = r_npc[1:0];
+    wire [1:0] w_to_r_npc = (r_stall) ? w_npc_2 : w_alu_result;
+    assign w_i_en = r_i_en;
     assign w_ir = w_i_in;
 
-    wire [1:0] w_rrs1toshiftreg = f_mux_to_w_rrstoshiftreg(r_rrs1,(r_state==`START_2),r_cnt);
-    wire [1:0] w_rrs2toshiftreg = f_mux_to_w_rrstoshiftreg((r_op_imm) ? r_imm : r_rrs2,(r_state==`START_2),r_cnt);
-    wire [1:0] w_imm_2 = f_mux_w_imm_2(r_imm,r_cnt);
+    assign w_npcadd_en = r_npcadd_en;
+
+    wire [1:0] w_rrs1toshiftreg = f_mux_to_w_rrstoshiftreg(w_rrs1,(r_state==`START_2),r_cnt);
+    wire [1:0] w_rrs2toshiftreg = f_mux_to_w_rrstoshiftreg(w_rrs2,(r_state==`START_2),r_cnt);
+    wire [1:0] w_imm_2 = f_mux_to_w_imm_2(w_imm,r_cnt);
 
     wire [1:0] w_shiftrega_2 = r_shiftrega[1:0];
     wire [1:0] w_shiftregb_2 = r_shiftregb[1:0];
@@ -1038,34 +1041,39 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
     wire [1:0] w_tmp_result = f_mux_to_w_tmp_result(r_shiftrega[0],r_shiftrega[31],r_tmp,r_state,r_cnt[4]);
 
     assign w_in_shiftrega = f_mux_to_w_in_shiftrega(w_rrs1toshiftreg,w_alu_result,w_tmp_result,r_state);
-    assign w_in_shiftregb = f_mux_to_w_in_shiftregb(w_rrs2toshiftreg,w_imm_2,r_state,r_op_imm);
+    assign w_in_shiftregb = f_mux_to_w_in_shiftregb(w_rrs2toshiftreg,w_imm_2,r_state,w_op_imm);
+
+    wire [1:0] w_alu_in1 = f_mux_to_w_alu_in1(w_shiftrega_2,w_npc_2,r_state);
+    wire [1:0] w_alu_in2 = f_mux_to_w_alu_in2(w_shiftregb_2,w_imm_2,r_state);
+
+    wire [31:0] w_result = r_shiftrega;
 
 
 
     /*********************************** FUNCTIONS ******************************************/
-    function [1:0] f_mux_w_imm_2;
+    function [1:0] f_mux_to_w_imm_2;
         input [31:0] w_imm;
         input [5:0] w_sel;
 
         begin
             case(w_sel)
-                1 : f_mux_w_imm_2 = w_imm[1:0];
-                2 : f_mux_w_imm_2 = w_imm[3:2];
-                3 : f_mux_w_imm_2 = w_imm[5:4];
-                4 : f_mux_w_imm_2 = w_imm[7:6];
-                5 : f_mux_w_imm_2 = w_imm[9:8];
-                6 : f_mux_w_imm_2 = w_imm[11:10];
-                7 : f_mux_w_imm_2 = w_imm[13:12];
-                8 : f_mux_w_imm_2 = w_imm[15:14];
-                9 : f_mux_w_imm_2 = w_imm[17:16];
-                10 : f_mux_w_imm_2 = w_imm[19:18];
-                11 : f_mux_w_imm_2 = w_imm[21:20];
-                12 : f_mux_w_imm_2 = w_imm[23:22];
-                13 : f_mux_w_imm_2 = w_imm[25:24];
-                14 : f_mux_w_imm_2 = w_imm[27:26];
-                15 : f_mux_w_imm_2 = w_imm[29:28];
-                16 : f_mux_w_imm_2 = w_imm[31:30];
-                default : f_mux_w_imm_2 = 2'bxx;
+                1 : f_mux_to_w_imm_2 = w_imm[1:0];
+                2 : f_mux_to_w_imm_2 = w_imm[3:2];
+                3 : f_mux_to_w_imm_2 = w_imm[5:4];
+                4 : f_mux_to_w_imm_2 = w_imm[7:6];
+                5 : f_mux_to_w_imm_2 = w_imm[9:8];
+                6 : f_mux_to_w_imm_2 = w_imm[11:10];
+                7 : f_mux_to_w_imm_2 = w_imm[13:12];
+                8 : f_mux_to_w_imm_2 = w_imm[15:14];
+                9 : f_mux_to_w_imm_2 = w_imm[17:16];
+                10 : f_mux_to_w_imm_2 = w_imm[19:18];
+                11 : f_mux_to_w_imm_2 = w_imm[21:20];
+                12 : f_mux_to_w_imm_2 = w_imm[23:22];
+                13 : f_mux_to_w_imm_2 = w_imm[25:24];
+                14 : f_mux_to_w_imm_2 = w_imm[27:26];
+                15 : f_mux_to_w_imm_2 = w_imm[29:28];
+                16 : f_mux_to_w_imm_2 = w_imm[31:30];
+                default : f_mux_to_w_imm_2 = 2'b00;
             endcase
         end
     endfunction
@@ -1152,6 +1160,36 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
         end
     endfunction
 
+    function [1:0] f_mux_to_w_alu_in1;
+        input [1:0] w_shiftrega_2;
+        input [1:0] w_npc_2;
+        input [4:0] w_state;
+
+        begin
+            case(w_state)
+                `START_2 : f_mux_to_w_alu_in1 = w_npc_2;
+                default : f_mux_to_w_alu_in1 = w_shiftrega_2;
+            endcase
+        end
+
+    endfunction
+
+    function [1:0] f_mux_to_w_alu_in2;
+        input [1:0] w_shiftregb_2;
+        input [1:0] w_imm_2;
+        input [4:0] w_state;
+        
+        begin
+            case(w_state)
+                `START_2 : f_mux_to_w_alu_in2 = w_shiftregb_2;
+                `ALU_1 : f_mux_to_w_alu_in2 = w_shiftregb_2;
+                `ALUI_1 : f_mux_to_w_alu_in2 = w_imm_2;
+                default : f_mux_to_w_alu_in2 = w_shiftregb_2;
+            endcase
+        end
+
+    endfunction
+
 endmodule
 
 
@@ -1192,21 +1230,12 @@ module m_decoder(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,r_alu_
     assign w_rs2    = (!w_op_imm) ? w_ir[24:20] : 5'd0;
     assign w_imm = w_imm_U ^ w_imm_I ^ w_imm_S ^ w_imm_B ^ w_imm_J;
 
-    reg [3:0] r_shift_ctrl0;
-    reg [3:0] r_alu_ctrl0;
+    reg [3:0] r_alu_ctrl0 = 0;
     always @(*) begin
         case(w_op)
-            5'b01100 : r_shift_ctrl0 = {w_funct7[5], w_funct3}; 
+            5'b01100 : r_alu_ctrl0 = {w_funct7[5], w_funct3}; 
             5'b00100 : r_alu_ctrl0 = (w_funct3==3'h5) ? {w_funct7[5], w_funct3} : {1'b0, w_funct3};
             default  : r_alu_ctrl0 = 4'b1111;
-        endcase
-    end
-
-    always @(*) begin
-        case(r_shift_ctrl0)
-            `SHIFT_CTRL_SLL___ : r_shift_ctrl = 1;
-            `SHIFT_CTRL_SRL___ : r_shift_ctrl = 2;
-            default : r_shift_ctrl = 0;
         endcase
     end
 
@@ -1217,6 +1246,14 @@ module m_decoder(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,r_alu_
             `ALU_CTRL_XOR___ : r_alu_ctrl = 3;
             `ALU_CTRL_OR____ : r_alu_ctrl = 4;
             `ALU_CTRL_AND___ : r_alu_ctrl = 5;
+            `SHIFT_CTRL_SLL___ : begin
+                r_shift_ctrl = 1;
+                r_alu_ctrl = 0;
+                end
+            `SHIFT_CTRL_SRL___ : begin
+                r_shift_ctrl = 2;
+                r_alu_ctrl = 0;
+                end
             default          : r_alu_ctrl = 0;
         endcase
     end
@@ -1236,7 +1273,8 @@ module m_decoder(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,r_alu_
     end
 endmodule
 
-/********************************************************************************************/  
+/********************************************************************************************/
+
 module m_regfile(w_clk, w_rs1, w_rs2, w_rdata1, w_rdata2, w_we, w_rd, w_wdata);
     input  wire        w_clk;
     input  wire [ 4:0] w_rs1, w_rs2;
@@ -1253,25 +1291,30 @@ endmodule
 
 /********************************************************************************************/  
 
-module m_ALU(w_alu_in1,w_alu_in2,w_carry_in,w_alu_ctrl,w_alu_result,w_carry_out);
+module m_ALU(w_alu_in1,w_alu_in2,w_carry_in,w_alu_ctrl,w_npcadd_en,w_alu_result,w_carry_out);
     input wire [1:0] w_alu_in1,w_alu_in2;
-    input wire [2:0] w_carry_in;
+    input wire w_carry_in;
     input wire [9:0] w_alu_ctrl;
+    input wire w_npcadd_en;
     output wire [1:0] w_alu_result;
-    output wire [2:0] w_carry_out;
+    output wire w_carry_out;
 
     reg [1:0] r_alu_result;
-    reg [2:0] r_carry_out;
+    reg r_carry_out;
 
     always @(*) begin
-        case(w_alu_ctrl)
-            1 : {r_carry_out,r_alu_result} = w_alu_in1 + w_alu_in2 + w_carry_in;
-            2 : {r_carry_out,r_alu_result} = w_alu_in1 - w_alu_in2 - w_carry_in;
-            3 : r_alu_result = w_alu_in1 ^ w_alu_in2;
-            4 : r_alu_result = w_alu_in1 | w_alu_in2;
-            5 : r_alu_result = w_alu_in1 & w_alu_in2;
-            default : r_alu_result = 0;
-        endcase
+        if(w_npcadd_en) begin
+            {r_carry_out,r_alu_result} = {1'b0,w_alu_in1} + {1'b0,w_alu_in2} + {2'b0,w_carry_in};
+        end else begin
+            case(w_alu_ctrl)
+                1 : {r_carry_out,r_alu_result} = {1'b0,w_alu_in1} + {1'b0,w_alu_in2} + {2'b0,w_carry_in};
+                2 : {r_carry_out,r_alu_result} = {1'b0,w_alu_in1} - {1'b0,w_alu_in2} - {2'b0,w_carry_in};
+                3 : r_alu_result = w_alu_in1 ^ w_alu_in2;
+                4 : r_alu_result = w_alu_in1 | w_alu_in2;
+                5 : r_alu_result = w_alu_in1 & w_alu_in2;
+                default : r_alu_result = 0;
+            endcase
+        end
     end
 
     assign w_alu_result = r_alu_result;

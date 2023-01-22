@@ -16,13 +16,7 @@ module main(w_clk,w_rst,w_rxd,r_txd,w_led);
     reg r_core_rst;
     always @(posedge w_clk) r_core_rst <= (r_rst | !initdone);
 
-    reg [31:0] r_scnt;
-    always @(posedge w_clk) begin
-        if(r_rst) r_scnt = 0;
-        else r_scnt <= r_scnt + 1;
-    end
-
-    assign w_led = {r_scnt[24:22],r_rst};
+    assign w_led = w_rout[3:0];
 
     /*****************************************************************************************/
     reg r_rxd_t1,r_rxd_t2;
@@ -50,13 +44,15 @@ module main(w_clk,w_rst,w_rxd,r_txd,w_led);
     /****************************************************************************************/
     wire        w_halt;
     wire [31:0] w_rout, I_DATA, I_ADDR, D_DATA, WD_DATA, D_ADDR;
+    wire I_EN;
     wire [3:0]  D_WE;
 
-    UltraSmall p(w_clk, !r_core_rst, w_rout, w_halt, I_ADDR, D_ADDR, I_DATA, D_DATA, WD_DATA, D_WE);
+    (* dont_touch = "true" *) 
+    UltraSmall p(w_clk, !r_core_rst, w_rout, w_halt, I_ADDR, D_ADDR, I_DATA, D_DATA, WD_DATA, I_EN, D_WE);
 
     wire [31:0] tmpdata;
 
-    m_IMEM#(32,`MEM_SIZE/4) imem(w_clk, initwe[0], initaddr[$clog2(`MEM_SIZE)-1:2], 
+    m_IMEM#(32,`MEM_SIZE/4) imem(w_clk, initwe[0], I_EN, initaddr[$clog2(`MEM_SIZE)-1:2], 
                                  I_ADDR[$clog2(`MEM_SIZE)-1:2], initdata, I_DATA);
 
     m_DMEM#(32,`MEM_SIZE/4) dmem(w_clk, r_core_rst, initwe, initaddr[$clog2(`MEM_SIZE)-1:2], 
@@ -258,18 +254,22 @@ module serialc(CLK, RST_X, RXD, DATA, EN);
 endmodule
 
 /********************************************************************************************/
-module m_IMEM#(parameter WIDTH=32, ENTRY=256)(CLK, WE, WADDR, RADDR, IDATA, ODATA);
-    input  wire                     CLK, WE;
+module m_IMEM#(parameter WIDTH=32, ENTRY=256)(CLK, WE, EN, WADDR, RADDR, IDATA, ODATA);
+    input  wire                     CLK, WE ,EN;
     input  wire [$clog2(ENTRY)-1:0] WADDR;
     input  wire [$clog2(ENTRY)-1:0] RADDR;
     input  wire [WIDTH-1:0]         IDATA;
-    output reg  [WIDTH-1:0]         ODATA;
+    output wire [WIDTH-1:0]         ODATA;
     
     reg [WIDTH-1:0] mem[0:ENTRY-1];
+    reg [$clog2(ENTRY)-1:0] r_raddr = 0;
+    
     always @(posedge CLK) begin
         if (WE) mem[WADDR] <= IDATA;
-        ODATA <= mem[RADDR];
+        if (EN) r_raddr <= RADDR;
+        //ODATA <= mem[RADDR];
     end
+    assign ODATA = mem[r_raddr];
 endmodule
 
 /********************************************************************************************/
