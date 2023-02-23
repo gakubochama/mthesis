@@ -28,10 +28,9 @@ module UltraSmall(w_clk, w_rst_x, r_rout, r_halt, w_i_addr, w_d_addr, w_i_in, w_
     reg r_i_en = 0;
     reg r_stall = 0;
     reg r_npcadd_en = 0;
-
+    reg r_rst;
 
     /****************************************************************************************/
-    reg r_rst;
     always @(posedge w_clk) r_rst <= !w_rst_x | r_halt;
 
     /*********************************** START_1 ********************************************/

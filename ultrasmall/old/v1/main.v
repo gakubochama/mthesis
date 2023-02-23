@@ -42,13 +42,12 @@ module main(w_clk,w_rst,w_rxd,r_txd,w_led);
     end
 
     /****************************************************************************************/
-    wire        w_halt;
     wire [31:0] w_rout, I_DATA, I_ADDR, D_DATA, WD_DATA, D_ADDR;
     wire I_EN;
     wire [3:0]  D_WE;
 
     (* dont_touch = "true" *) 
-    UltraSmall p(w_clk, !r_core_rst, w_rout, w_halt, I_ADDR, D_ADDR, I_DATA, D_DATA, WD_DATA, I_EN, D_WE);
+    UltraSmall p(w_clk, !r_core_rst, w_rout, I_ADDR, D_ADDR, I_DATA, D_DATA, WD_DATA, I_EN, D_WE);
 
     wire [31:0] tmpdata;
 
