@@ -138,8 +138,8 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
     wire [1:0] w_dmem_offset = (r_state==`LOADSTORE_2) ? r_shiftrega[1:0] : 2'b00;
     wire w_carry;
     wire [1:0] w_alu_result;
-    wire [1:0] w_in_shiftrega = f_mux_to_w_in_shiftrega(w_rrs1toshiftreg,w_shiftregb_2,r_shiftrega_msb,r_shiftregb_msb,w_alu_result,w_tmp_result,r_state,w_arithmetic_shift,r_cnt,w_op_lb,w_op_lh,w_op_lw,w_op_lbu,w_op_lhu);
-    wire [1:0] w_in_shiftregb = f_mux_to_w_in_shiftregb(w_rrs2toshiftreg,w_imm_2,w_shiftregb_2,r_state,r_cnt,r_dmem_offset,w_op_imm,w_op_sb,w_op_sh,w_op_sw);
+    wire [1:0] w_shiftrega_in = f_mux_to_w_shiftrega_in(w_rrs1toshiftreg,w_shiftregb_2,r_shiftrega_msb,r_shiftregb_msb,w_alu_result,w_tmp_result,r_state,w_arithmetic_shift,r_cnt,w_op_lb,w_op_lh,w_op_lw,w_op_lbu,w_op_lhu);
+    wire [1:0] w_shiftregb_in = f_mux_to_w_shiftregb_in(w_rrs2toshiftreg,w_imm_2,w_shiftregb_2,r_state,r_cnt,r_dmem_offset,w_op_imm,w_op_sb,w_op_sh,w_op_sw);
     wire w_npcadd_en;
     wire w_cal_addr_en;
     wire [1:0] w_pc_2 = r_pc[1:0];
@@ -170,7 +170,7 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
     assign w_cal_addr_en = r_cal_addr_en;
     assign w_d_we = {4{(w_mem_we && (r_state==`STORE_2))}};
     assign w_d_addr = ((r_state==`LOADSTORE_2 || r_state==`STORE_2 || r_state==`LOAD_2)) ? r_shiftrega : 0;
-    assign w_d_out = (r_state==`STORE_2 & w_op_sb) ? {r_shiftregb[7:0],r_shiftregb[15:8],r_shiftregb[23:16],r_shiftregb[31:24]} : ((r_state==`STORE_2 & w_op_sh) ? r_shiftregb : ((r_state==`STORE_2 & w_op_sw) ? r_shiftregb : 0)); //little endian
+    assign w_d_out = (r_state==`STORE_2) ? r_shiftregb : 0;
 
     /***************************************MOODULE******************************************/
     m_decoder decoder0(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,w_alu_ctrl,w_shift_ctrl,w_bru_ctrl,w_imm);
@@ -238,8 +238,8 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 r_pc <= {w_npc_2,r_pc[31:2]};
                 r_npc <= {w_to_r_npc,r_npc[31:2]}; //if branch or jump inst npc <= pc
                 r_carry <= w_carry;
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_cnt <= r_cnt + 1;
             end else begin
                 //branch resolve
@@ -250,8 +250,8 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 r_pc <= {w_npc_2,r_pc[31:2]};
                 r_npc <= {w_to_r_npc,r_npc[31:2]}; //if branch or jump inst npc <= pc
                 r_carry <= w_carry;
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_cnt <= 1; //reset counter
                 r_npcadd_en <= 0;
                 r_state <= `START_3;
@@ -301,12 +301,12 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
             if(r_cnt[4]==0) begin
                 r_npc <= {w_to_r_npc,r_npc[31:2]}; //npc <= pc + sext(offset)
                 r_carry <= w_carry;
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
                 r_cnt <= r_cnt + 1;
             end else begin
                 r_npc <= {w_to_r_npc,r_npc[31:2]}; //npc <= pc + sext(offset)
                 r_carry <= w_carry;
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
                 r_cnt <= 1; //reset counter
                 r_npcadd_en <= 0;
                 r_reg_we <= w_reg_we;
@@ -320,8 +320,8 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
 
                 r_npc <= {w_to_r_npc,r_npc[31:2]}; //npc <= pc + sext(offset) or npc <= pc + 4;
                 r_carry <= w_carry;
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_cnt <= r_cnt + 1;
             end else begin
 `ifdef TRACE
@@ -329,8 +329,8 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
 `endif
                 r_npc <= {w_to_r_npc,r_npc[31:2]}; //npc <= pc + sext(offset) or npc <= pc + 4;
                 r_carry <= w_carry;
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_cnt <= 1; //reset counter
                 r_npcadd_en <= 0;
 `ifdef ASYNC_IMEM
@@ -355,8 +355,8 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                         end
                     default : ;
                 endcase
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_cnt <= r_cnt + 1;
             end else begin
                 case(w_alu_ctrl)
@@ -374,8 +374,8 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                         end
                     default : ;
                 endcase
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_reg_we <= w_reg_we;
                 r_state <= `WRITEBACK_1;
                 r_cnt <= 1;
@@ -403,8 +403,8 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                         end
                     default : ;
                 endcase
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_cnt <= r_cnt + 1;
             end else begin
                 case(w_alu_ctrl)
@@ -428,8 +428,8 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                         end
                     default : ;
                 endcase
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_reg_we <= w_reg_we;
                 r_state <= `WRITEBACK_1;
                 r_cnt <= 1;
@@ -442,22 +442,22 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                         r_state <= `SHIFTR_2;
                     end
                 2 : begin              
-                        r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
+                        r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
                         r_reg_we <= w_reg_we;                
                         r_state <= `WRITEBACK_1;                   
                     end
                 3 : begin
                         r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                        r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                        r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                         r_cnt <= 0;
                         r_state <= `SHIFTR_2;
                     end
                 4 : begin
                         if(r_cnt!=2) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -465,21 +465,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 5 : begin
                         if(r_cnt!=2) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 6 : begin
                         if(r_cnt!=3) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -487,21 +487,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 7 : begin
                         if(r_cnt!=3) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 8 : begin
                         if(r_cnt!=4) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -509,21 +509,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 9 : begin
                         if(r_cnt!=4) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 10 : begin
                         if(r_cnt!=5) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -531,21 +531,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 11 : begin
                         if(r_cnt!=5) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 12 : begin
                         if(r_cnt!=6) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -553,21 +553,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 13 : begin
                         if(r_cnt!=6) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 14 : begin
                         if(r_cnt!=7) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -575,21 +575,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 15 : begin
                         if(r_cnt!=7) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 16 : begin
                         if(r_cnt!=8) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -597,21 +597,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 17 : begin
                         if(r_cnt!=8) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 18 : begin
                         if(r_cnt!=9) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -619,21 +619,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 19 : begin
                         if(r_cnt!=9) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 20 : begin
                         if(r_cnt!=10) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -641,21 +641,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 21 : begin
                         if(r_cnt!=10) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 22 : begin
                         if(r_cnt!=11) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -663,21 +663,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 23 : begin
                         if(r_cnt!=11) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 24 : begin
                         if(r_cnt!=12) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -685,21 +685,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 25 : begin
                         if(r_cnt!=12) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 26 : begin
                         if(r_cnt!=13) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -707,21 +707,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 27 : begin
                         if(r_cnt!=13) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 28 : begin
                         if(r_cnt!=14) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -729,21 +729,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 29 : begin
                         if(r_cnt!=14) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 30 : begin
                         if(r_cnt!=15) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -751,21 +751,21 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 31 : begin
                         if(r_cnt!=15) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= (w_arithmetic_shift) ? r_shiftrega_msb : 1'b0;
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 0;
                             r_state <= `SHIFTR_2;
                         end
                     end
                 32 : begin
                         if(r_cnt==15) begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= r_cnt + 1;
                         end else begin
-                            r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                            r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -779,10 +779,10 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
         end else if(r_state==`SHIFTR_2) begin //17 cycle
             if(r_cnt[4]==0) begin
                 r_tmp <= r_shiftrega[1];
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]}; 
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]}; 
                 r_cnt <= r_cnt + 1;
             end else begin
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};  
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};  
                 r_cnt <= 1;
                 r_reg_we <= w_reg_we;
                 r_state <= `WRITEBACK_1;
@@ -795,24 +795,24 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                     end
                 2 : begin
                         r_tmp <= r_shiftrega[30];
-                        r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};
+                        r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};
                         r_reg_we <= w_reg_we;
                         r_state <= `WRITEBACK_1;
                     end
                 3 : begin
                         r_tmp <= r_shiftrega[30];
-                        r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                        r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                         r_cnt <= 0;
                         r_state <= `SHIFTL_2;
                     end
                 4 : begin
                         if(r_cnt!=2) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -821,11 +821,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 5 : begin
                         if(r_cnt!=2) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -833,11 +833,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 6 : begin
                         if(r_cnt!=3) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -846,11 +846,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 7 : begin
                         if(r_cnt!=3) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -858,11 +858,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 8 : begin
                         if(r_cnt!=4) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -871,11 +871,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 9 : begin
                         if(r_cnt!=4) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -883,11 +883,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 10 : begin
                         if(r_cnt!=5) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -896,11 +896,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 11 : begin
                         if(r_cnt!=5) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -908,11 +908,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 12 : begin
                         if(r_cnt!=6) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -921,11 +921,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 13 : begin
                         if(r_cnt!=6) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -933,11 +933,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 14 : begin
                         if(r_cnt!=7) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -946,11 +946,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 15 : begin
                         if(r_cnt!=7) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -958,11 +958,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 16 : begin
                         if(r_cnt!=8) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -971,11 +971,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 17 : begin
                         if(r_cnt!=8) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -983,11 +983,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 18 : begin
                         if(r_cnt!=9) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -996,11 +996,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 19 : begin
                         if(r_cnt!=9) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -1008,11 +1008,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 20 : begin
                         if(r_cnt!=10) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -1021,11 +1021,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 21 : begin
                         if(r_cnt!=10) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -1033,11 +1033,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 22 : begin
                         if(r_cnt!=11) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -1046,11 +1046,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 23 : begin
                         if(r_cnt!=11) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -1058,11 +1058,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 24 : begin
                         if(r_cnt!=12) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -1071,11 +1071,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 25 : begin
                         if(r_cnt!=12) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -1083,11 +1083,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 26 : begin
                         if(r_cnt!=13) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -1096,11 +1096,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 27 : begin
                         if(r_cnt!=13) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -1108,11 +1108,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 28 : begin
                         if(r_cnt!=14) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -1121,11 +1121,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 29 : begin
                         if(r_cnt!=14) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -1133,11 +1133,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 30 : begin
                         if(r_cnt!=15) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -1146,11 +1146,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 31 : begin
                         if(r_cnt!=15) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 0;
                             r_state <= `SHIFTL_2;
                         end
@@ -1158,11 +1158,11 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
                 32 : begin
                         if(r_cnt==15) begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= r_cnt + 1;
                         end else begin
                             r_tmp <= r_shiftrega[30];
-                            r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                            r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                             r_cnt <= 1;
                             r_reg_we <= w_reg_we;
                             r_state <= `WRITEBACK_1;
@@ -1176,22 +1176,22 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
         end else if(r_state==`SHIFTL_2) begin
             if(r_cnt[4]==0) begin
                 r_tmp <= r_shiftrega[30];
-                r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                 r_cnt <= r_cnt + 1;
             end else begin
                 r_tmp <= r_shiftrega[30];
-                r_shiftrega <= {r_shiftrega[29:0],w_in_shiftrega};  
+                r_shiftrega <= {r_shiftrega[29:0],w_shiftrega_in};  
                 r_cnt <= 1;
                 r_reg_we <= w_reg_we;
                 r_state <= `WRITEBACK_1;
             end
         end else if(r_state==`LOADSTORE_1) begin
             if(r_cnt[4]==0) begin
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
                 r_carry <= w_carry;
                 r_cnt <= r_cnt + 1;
             end else begin
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
                 r_carry <= w_carry;
                 r_cnt <= 1;
                 r_cal_addr_en <= 0;
@@ -1219,10 +1219,10 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
 `endif
         end else if(r_state==`STORE_1) begin
             if(r_cnt[4]==0) begin
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_cnt <= r_cnt + 1;
             end else begin
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_cnt <= 1;
 `ifndef ASYNC_DMEM
                 r_d_en <= 1;
@@ -1252,12 +1252,12 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
             r_state <= `LOAD_2;
         end else if(r_state==`LOAD_2) begin
             if(r_cnt[4]==0) begin
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_cnt <= r_cnt + 1;
             end else begin
-                r_shiftrega <= {w_in_shiftrega,r_shiftrega[31:2]};
-                r_shiftregb <= {w_in_shiftregb,r_shiftregb[31:2]};
+                r_shiftrega <= {w_shiftrega_in,r_shiftrega[31:2]};
+                r_shiftregb <= {w_shiftregb_in,r_shiftregb[31:2]};
                 r_cnt <= 1;
                 r_reg_we <= w_reg_we;
                 r_state <= `WRITEBACK_1;
@@ -1387,7 +1387,7 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
         end
     endfunction
 
-    function [1:0] f_mux_to_w_in_shiftrega;
+    function [1:0] f_mux_to_w_shiftrega_in;
         input [1:0] w_rrs1toshiftreg;
         //input [1:0] w_shiftrega_2;
         input [1:0] w_shiftregb_2;
@@ -1402,35 +1402,35 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
 
         begin
             case(w_state)
-                `START_2 : f_mux_to_w_in_shiftrega = w_rrs1toshiftreg;
-                `ALU_1 : f_mux_to_w_in_shiftrega = w_alu_result;
-                `ALUI_1 : f_mux_to_w_in_shiftrega = w_alu_result;
-                `SHIFTR_1 : f_mux_to_w_in_shiftrega = (w_arithmetic_shift) ? {w_shiftrega_msb,w_shiftrega_msb} : 2'b00;
-                `SHIFTL_1 : f_mux_to_w_in_shiftrega = 2'b00;
-                `SHIFTR_2 : f_mux_to_w_in_shiftrega = w_tmp_result;
-                `SHIFTL_2 : f_mux_to_w_in_shiftrega = w_tmp_result;
-                `LOADSTORE_1 : f_mux_to_w_in_shiftrega = w_alu_result;
+                `START_2 : f_mux_to_w_shiftrega_in = w_rrs1toshiftreg;
+                `ALU_1 : f_mux_to_w_shiftrega_in = w_alu_result;
+                `ALUI_1 : f_mux_to_w_shiftrega_in = w_alu_result;
+                `SHIFTR_1 : f_mux_to_w_shiftrega_in = (w_arithmetic_shift) ? {w_shiftrega_msb,w_shiftrega_msb} : 2'b00;
+                `SHIFTL_1 : f_mux_to_w_shiftrega_in = 2'b00;
+                `SHIFTR_2 : f_mux_to_w_shiftrega_in = w_tmp_result;
+                `SHIFTL_2 : f_mux_to_w_shiftrega_in = w_tmp_result;
+                `LOADSTORE_1 : f_mux_to_w_shiftrega_in = w_alu_result;
                 `LOAD_2 : begin
                     if(w_op_lb) begin //lb
-                    f_mux_to_w_in_shiftrega = (w_cnt<6'd5) ? w_shiftregb_2 : {w_shiftregb_msb,w_shiftregb_msb};
+                    f_mux_to_w_shiftrega_in = (w_cnt<6'd5) ? w_shiftregb_2 : {w_shiftregb_msb,w_shiftregb_msb};
                     end
                     else if(w_op_lh) begin //lh
-                    f_mux_to_w_in_shiftrega = (w_cnt<6'd9) ? w_shiftregb_2 : {w_shiftregb_msb,w_shiftregb_msb};
+                    f_mux_to_w_shiftrega_in = (w_cnt<6'd9) ? w_shiftregb_2 : {w_shiftregb_msb,w_shiftregb_msb};
                     end
                     else if(w_op_lbu) begin //lbu
-                    f_mux_to_w_in_shiftrega = (w_cnt<6'd5) ? w_shiftregb_2 : 2'b00;
+                    f_mux_to_w_shiftrega_in = (w_cnt<6'd5) ? w_shiftregb_2 : 2'b00;
                     end
                     else if(w_op_lhu) begin //lhu
-                    f_mux_to_w_in_shiftrega = (w_cnt<6'd9) ? w_shiftregb_2 : 2'b00;
+                    f_mux_to_w_shiftrega_in = (w_cnt<6'd9) ? w_shiftregb_2 : 2'b00;
                     end
-                    else f_mux_to_w_in_shiftrega = w_shiftregb_2; //lw
+                    else f_mux_to_w_shiftrega_in = w_shiftregb_2; //lw
                 end
-                default : f_mux_to_w_in_shiftrega = 2'b00;
+                default : f_mux_to_w_shiftrega_in = 2'b00;
             endcase
         end
     endfunction
 
-    function [1:0] f_mux_to_w_in_shiftregb;
+    function [1:0] f_mux_to_w_shiftregb_in;
         input [1:0] w_rrs2toshiftreg;
         input [1:0] w_imm_2;
         input [1:0] w_shiftregb_2;
@@ -1441,26 +1441,26 @@ module UltraSmall(w_clk, w_rst_x, w_rout, w_i_addr, w_d_addr, w_i_in, w_d_in, w_
 
         begin
             case(w_state)
-                `START_2 : f_mux_to_w_in_shiftregb = (w_op_imm) ? w_imm_2 : w_rrs2toshiftreg;
+                `START_2 : f_mux_to_w_shiftregb_in = (w_op_imm) ? w_imm_2 : w_rrs2toshiftreg;
                 `STORE_1 : begin
                     if(w_op_sb) begin //sb
-                        f_mux_to_w_in_shiftregb = 
-                        (w_dmem_offset==2'b00) ? ((w_cnt<6'd13) ? w_shiftregb_2 : w_rrs2toshiftreg) :
-                        (w_dmem_offset==2'b01) ? ((w_cnt<6'd9 | w_cnt>6'd12) ? w_shiftregb_2 : w_rrs2toshiftreg) :
-                        (w_dmem_offset==2'b10) ? ((w_cnt<6'd5 | w_cnt>6'd8) ? w_shiftregb_2 : w_rrs2toshiftreg) :
-                                                 ((w_cnt>6'd4) ? w_shiftregb_2 : w_rrs2toshiftreg);
+                        f_mux_to_w_shiftregb_in = 
+                        (w_dmem_offset==2'b00) ? ((w_cnt>6'd4) ? w_shiftregb_2 : w_rrs2toshiftreg) :
+                        (w_dmem_offset==2'b01) ? ((w_cnt<6'd5 | w_cnt>6'd8) ? w_shiftregb_2 : w_rrs2toshiftreg) :
+                        (w_dmem_offset==2'b10) ? ((w_cnt<6'd9 | w_cnt>6'd12) ? w_shiftregb_2 : w_rrs2toshiftreg) :
+                                                 ((w_cnt<6'd13) ? w_shiftregb_2 : w_rrs2toshiftreg);
                     end
                     else if(w_op_sh) begin //sh
-                        f_mux_to_w_in_shiftregb = 
+                        f_mux_to_w_shiftregb_in = 
                         (w_dmem_offset==2'b00) ? ((w_cnt>6'd8) ? w_shiftregb_2 : w_rrs2toshiftreg) :
                                                  ((w_cnt<6'd9) ? w_shiftregb_2 : w_rrs2toshiftreg);
                     end
                     else begin
-                        f_mux_to_w_in_shiftregb = w_rrs2toshiftreg; //sw
+                        f_mux_to_w_shiftregb_in = w_rrs2toshiftreg; //sw
                     end
                 end
-                `LOAD_2 : f_mux_to_w_in_shiftregb = w_shiftregb_2;
-                default : f_mux_to_w_in_shiftregb = 2'b00;
+                `LOAD_2 : f_mux_to_w_shiftregb_in = w_shiftregb_2;
+                default : f_mux_to_w_shiftregb_in = 2'b00;
             endcase
         end
     endfunction
@@ -1574,7 +1574,6 @@ module m_decoder(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,r_alu_
             default  : r_alu_ctrl0 = 4'b1111;
         endcase
     end
-
     always @(*) begin
         case(r_alu_ctrl0)
             `ALU_CTRL_ADD___ : r_alu_ctrl = 1;
@@ -1598,8 +1597,9 @@ module m_decoder(w_ir,w_rd,w_rs1,w_rs2,w_mem_we,w_reg_we,w_op_ld,w_op_imm,r_alu_
             default            : r_shift_ctrl = 4'b0000;
         endcase
     end
-    
+
     always @(*) begin /***** one-hot encoding *****/
+
         case(w_op)
             5'b11011 : r_bru_ctrl =                    7'b1000000;     // JAL  -> taken
             5'b11001 : r_bru_ctrl =                    7'b1000000;     // JALR -> taken

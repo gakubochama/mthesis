@@ -184,3 +184,813 @@ __ Simulation speed (KIPS)  :          78
 
 rv32ui-p-ori ultrasmall
 ----------------------------------------------------------------
+rv32ui-p-lb simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         286
+__ Executed instructions    :         285
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :         702
+__ Simulation speed (KIPS)  :         405
+
+
+rv32ui-p-lb ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            12181
+
+
+rv32ui-p-sb simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         475
+__ Executed instructions    :         474
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        3067
+__ Simulation speed (KIPS)  :         154
+
+
+rv32ui-p-sb ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+test 0x00000002 failed.
+==> poweroff
+==> elapsed clock cycles       :            10496
+
+
+rv32ui-p-sw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         536
+__ Executed instructions    :         535
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1274
+__ Simulation speed (KIPS)  :         419
+
+
+rv32ui-p-sw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+test 0x00000002 failed.
+==> poweroff
+==> elapsed clock cycles       :            10568
+
+
+rv32ui-p-sh simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         528
+__ Executed instructions    :         527
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1692
+__ Simulation speed (KIPS)  :         311
+
+
+rv32ui-p-sh ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+test 0x00000002 failed.
+==> poweroff
+==> elapsed clock cycles       :            10496
+
+
+rv32ui-p-sw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         536
+__ Executed instructions    :         535
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1157
+__ Simulation speed (KIPS)  :         462
+
+
+rv32ui-p-sw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+test 0x00000002 failed.
+==> poweroff
+==> elapsed clock cycles       :            10568
+
+
+rv32ui-p-sw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         536
+__ Executed instructions    :         535
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1377
+__ Simulation speed (KIPS)  :         388
+
+
+rv32ui-p-sw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            22683
+
+
+rv32ui-p-sh simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         528
+__ Executed instructions    :         527
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1385
+__ Simulation speed (KIPS)  :         380
+
+
+rv32ui-p-sh ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            22413
+
+
+rv32ui-p-sb simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         475
+__ Executed instructions    :         474
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        2230
+__ Simulation speed (KIPS)  :         212
+
+
+rv32ui-p-sb ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            20505
+
+
+rv32ui-p-lw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         316
+__ Executed instructions    :         315
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :         759
+__ Simulation speed (KIPS)  :         415
+
+
+rv32ui-p-lw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            13261
+
+
+rv32ui-p-lb simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         286
+__ Executed instructions    :         285
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :         692
+__ Simulation speed (KIPS)  :         411
+
+
+rv32ui-p-lb ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            12181
+
+
+rv32ui-p-sw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         536
+__ Executed instructions    :         535
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1482
+__ Simulation speed (KIPS)  :         360
+
+
+rv32ui-p-sw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            22683
+
+
+rv32ui-p-sh simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         528
+__ Executed instructions    :         527
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1549
+__ Simulation speed (KIPS)  :         340
+
+
+rv32ui-p-sh ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            22413
+
+
+rv32ui-p-sb simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         475
+__ Executed instructions    :         474
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1585
+__ Simulation speed (KIPS)  :         299
+
+
+rv32ui-p-sb ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            20505
+
+
+rv32ui-p-sw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         536
+__ Executed instructions    :         535
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1302
+__ Simulation speed (KIPS)  :         410
+
+
+rv32ui-p-sw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            22683
+
+
+rv32ui-p-sw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         536
+__ Executed instructions    :         535
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        3222
+__ Simulation speed (KIPS)  :         166
+
+
+rv32ui-p-sw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+test 0x00000002 failed.
+==> poweroff
+==> elapsed clock cycles       :            10568
+
+
+rv32ui-p-sb simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         475
+__ Executed instructions    :         474
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1472
+__ Simulation speed (KIPS)  :         322
+
+
+rv32ui-p-sb ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+test 0x00000002 failed.
+==> poweroff
+==> elapsed clock cycles       :            10496
+
+
+rv32ui-p-sh simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         528
+__ Executed instructions    :         527
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1150
+__ Simulation speed (KIPS)  :         458
+
+
+rv32ui-p-sh ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+test 0x00000002 failed.
+==> poweroff
+==> elapsed clock cycles       :            10496
+
+
+rv32ui-p-sw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         536
+__ Executed instructions    :         535
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        2977
+__ Simulation speed (KIPS)  :         179
+
+
+rv32ui-p-sw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+test 0x00000002 failed.
+==> poweroff
+==> elapsed clock cycles       :            10568
+
+
+rv32ui-p-sw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         536
+__ Executed instructions    :         535
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1594
+__ Simulation speed (KIPS)  :         335
+
+
+rv32ui-p-sw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            22683
+
+
+rv32ui-p-sb simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         475
+__ Executed instructions    :         474
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        3893
+__ Simulation speed (KIPS)  :         121
+
+
+rv32ui-p-sb ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            20505
+
+
+rv32ui-p-sh simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         528
+__ Executed instructions    :         527
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        5871
+__ Simulation speed (KIPS)  :          89
+
+
+rv32ui-p-sh ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            22413
+
+
+rv32ui-p-lb simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         286
+__ Executed instructions    :         285
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :         713
+__ Simulation speed (KIPS)  :         399
+
+
+rv32ui-p-lb ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            12181
+
+
+rv32ui-p-lbu simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         286
+__ Executed instructions    :         285
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :         717
+__ Simulation speed (KIPS)  :         397
+
+
+rv32ui-p-lbu ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            12181
+
+
+rv32ui-p-lhu simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         311
+__ Executed instructions    :         310
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :         855
+__ Simulation speed (KIPS)  :         362
+
+
+rv32ui-p-lhu ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            13081
+
+
+rv32ui-p-lh simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         302
+__ Executed instructions    :         301
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1079
+__ Simulation speed (KIPS)  :         278
+
+
+rv32ui-p-lh ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            12757
+
+
+rv32ui-p-lw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         316
+__ Executed instructions    :         315
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :         879
+__ Simulation speed (KIPS)  :         358
+
+
+rv32ui-p-lw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            13261
+
+
+rv32ui-p-add simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         522
+__ Executed instructions    :         521
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1158
+__ Simulation speed (KIPS)  :         449
+
+
+rv32ui-p-add ultrasmall
+----------------------------------------------------------------
+rv32ui-p-add simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         522
+__ Executed instructions    :         521
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1882
+__ Simulation speed (KIPS)  :         276
+
+
+rv32ui-p-add ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            20779
+
+
+rv32ui-p-sw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         536
+__ Executed instructions    :         535
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1441
+__ Simulation speed (KIPS)  :         371
+
+
+rv32ui-p-sw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            22683
+
+
+rv32ui-p-lw simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         316
+__ Executed instructions    :         315
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :         736
+__ Simulation speed (KIPS)  :         427
+
+
+rv32ui-p-lw ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            13261
+
+
+rv32ui-p-sb simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         475
+__ Executed instructions    :         474
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1056
+__ Simulation speed (KIPS)  :         448
+
+
+rv32ui-p-sb ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            20505
+
+
+rv32ui-p-lb simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         286
+__ Executed instructions    :         285
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :         655
+__ Simulation speed (KIPS)  :         435
+
+
+rv32ui-p-lb ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            12181
+
+
+rv32ui-p-add simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         522
+__ Executed instructions    :         521
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1155
+__ Simulation speed (KIPS)  :         451
+
+
+rv32ui-p-add ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            20779
+
+
+rv32ui-p-add simrv
+----------------------------------------------------------------
+__ SimCore/RISC-V Functional Simulator Version 1.3.8 test01 2020-07-11
+__ Please type Control+'q' to quit the simulation
+
+correct!
+
+__ Power off
+__ Elapsed clocks (mtime)   :         522
+__ Executed instructions    :         521
+__ Executed uc_instructions :           0
+__ Fetched compressed insns :           0
+__ Elapsed time (usec)      :        1175
+__ Simulation speed (KIPS)  :         443
+
+
+rv32ui-p-add ultrasmall
+----------------------------------------------------------------
+VCD info: dumpfile main.vcd opened for output.
+correct!
+==> poweroff
+==> elapsed clock cycles       :            20779
+
+

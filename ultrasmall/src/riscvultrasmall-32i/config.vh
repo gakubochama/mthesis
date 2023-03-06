@@ -50,4 +50,4 @@
 //`define IVERILOG
 
 //trace
-`define TRACE
+//`define TRACE

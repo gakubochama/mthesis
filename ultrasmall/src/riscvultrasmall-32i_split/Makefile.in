@@ -1,0 +1,9 @@
+ILEN                := 32
+XLEN                := 32
+ARCH                := rv32i
+ABI                 := ilp32
+
+local_dir           := src/riscvultrasmall-32i
+local_srcs          := $(wildcard $(local_dir)/*.v)
+
+srcs                += $(local_srcs)
